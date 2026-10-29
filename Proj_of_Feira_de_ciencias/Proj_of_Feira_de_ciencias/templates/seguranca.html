@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Segurança | uniAI</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='seguranca-app.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body class="pagina-seguranca">
+
+    <header id="header-fixo">
+        <a href="/" class="logo logo-img" aria-label="uniAI, página inicial"><img src="{{ url_for('static', filename='logo.png') }}" alt="μni AI"></a>
+        <div class="menu-toggle" id="menu-toggle">&#9776;</div>
+        <nav id="nav-menu">
+            <a href="/">Home</a>
+            <a href="/seguranca.html" class="active">Segurança</a>
+            <a href="/jogo.html">Jogo</a>
+        </nav>
+    </header>
+
+    <main class="container-painel">
+        <section class="textos-seguranca">
+            <h2>Assistente Virtual de Segurança</h2>
+            <p>Com a ideia de ser algo intuitivo e util para todos este aplicativo é <strong>totalmente gerido pelo servidor Python</strong>: a verificação do sistema, o controle dos dispositivos,
+                as imagens das câmeras foram desenvolvidas com pixel art, os alertas e o assistente virtual guiado, que entende o que você escreve (versão beta).</p>
+
+            <h2 class="titulo-destaque">O que testar:</h2>
+            <ol class="lista-testes">
+                <li>Entre com a sua conta ou use o <strong>Acesso Mestre</strong> (convidado) para entrar na hora.</li>
+                <li><strong>A cada 30 segundos surge um problema fictício</strong> (fechadura aberta, aparelho estranho no Wi-Fi, câmera com defeito...). Um alerta aparece no app e, se for uma câmera, a imagem já mostra o defeito.</li>
+                <li>Em <strong>Início</strong>, toque em <em>Verificar sistema</em>: o relatório mostra o que está errado. Depois use <em>Corrigir problema</em> e veja cada passo da correção. O próximo problema surge 30 segundos depois.</li>
+                <li>Em <strong>Câmeras</strong>, alterne entre as 5 câmeras. Com a luz acesa a imagem é colorida; com a luz apagada ela muda sozinha para a <strong>visão noturna</strong>.</li>
+                <li>Em <strong>Casa</strong>, ligue e desligue luzes e ar-condicionado e adicione ou remova dispositivos.</li>
+                <li>No <strong>assistente virtual guiado</strong>, escreva comandos como <em>“ligar a luz da sala”</em>, <em>“ver a câmera da garagem”</em>, <em>“verificar o sistema”</em> ou <em>“status”</em>.</li>
+                <li>Use <strong>Histórico</strong> para ver tudo o que o sistema detectou e fez.</li>
+            </ol>
+        </section>
+
+        <aside class="celular-mockup" id="celular-mockup">
+            <button class="btn-fechar" onclick="fecharCelularMobile()">&times;</button>
+            <div class="tela-celular">
+
+                {% if not user %}
+                <div class="app-tela ativa" id="tela-login" style="padding: 25px; justify-content: center;">
+                    <h2 class="app-logo">APP<span>.MAKER</span></h2>
+
+                    <div class="nav-tabs">
+                        <button id="tab-login" class="tab-btn active" onclick="switchTab('login')">Entrar</button>
+                        {% if cadastro_aberto %}<button id="tab-cadastro" class="tab-btn" onclick="switchTab('cadastro')">Criar Conta</button>{% endif %}
+                    </div>
+
+                    <form id="login-form" onsubmit="fazerLogin(event)">
+                        <input type="email" id="login-email" placeholder="E-mail" required>
+                        <input type="password" id="login-senha" placeholder="Palavra-passe" required>
+                        <button type="submit" class="btn-app">Entrar</button>
+
+                        <div style="text-align: center; margin: 12px 0; color: #666; font-size: 0.8rem;">OU</div>
+                        <button type="button" class="btn-app" style="background: #2a3441; color: #ccc;" onclick="fazerLoginMestre()">Acesso Mestre (Convidado)</button>
+                    </form>
+
+                    {% if cadastro_aberto %}
+                    <form id="cadastro-form" class="hidden" onsubmit="fazerCadastro(event)">
+                        <input type="email" id="cad-email" placeholder="Novo E-mail" required>
+                        <input type="password" id="cad-senha" placeholder="Palavra-passe Forte" required>
+                        <button type="submit" class="btn-app">Registar</button>
+                    </form>
+                    {% endif %}
+
+                    <div id="mensagem" class="msg-box hidden"></div>
+                </div>
+
+                {% else %}
+                <div class="app-tela ativa" id="tela-app">
+                    <div class="app-header app-topo">
+                        <div class="app-topo-txt">
+                            <span id="app-titulo">Painel Principal</span>
+                            <small>Operador: <b id="nome-usuario">{{ nome }}</b> <button type="button" class="btn-lapis" onclick="editarNome()" title="Alterar nome" aria-label="Alterar nome">✎</button></small>
+                        </div>
+                        <button type="button" class="btn-sair" onclick="fazerLogout()">Sair ✖</button>
+                    </div>
+
+                    <div id="app-corpo">
+                        <div id="toast" class="toast-app hidden" role="alert"></div>
+
+                        <!-- ===== INÍCIO ===== -->
+                        <section class="painel ativo" id="p-inicio">
+                            <form id="nome-form" class="nome-form hidden" onsubmit="salvarNome(event)">
+                                <label for="nome-input">Seu nome (aparece no lugar do e-mail)</label>
+                                <input type="text" id="nome-input" maxlength="24" placeholder="Ex.: Henrique" autocomplete="off" required>
+                                <div class="linha-btns">
+                                    <button type="submit" class="btn-app">Salvar</button>
+                                    <button type="button" class="btn-app sec" onclick="cancelarNome()">Cancelar</button>
+                                </div>
+                                <div id="nome-msg" class="msg-box hidden" role="alert"></div>
+                            </form>
+
+                            <div class="card-status">
+                                <span class="status-ico" id="status-ico">🛡️</span>
+                                <div>
+                                    <div class="status-rotulo">Status do sistema</div>
+                                    <div id="sys-status" class="status-pill" aria-live="polite">AGUARDANDO VERIFICAÇÃO</div>
+                                </div>
+                            </div>
+                            <p id="status-dica" class="dica"></p>
+
+                            <div class="acoes-linha">
+                                <button id="btn-verificar" class="btn-app" onclick="verificarSistema()">🔍 Verificar sistema</button>
+                                <button id="btn-corrigir" class="btn-app perigo hidden" onclick="corrigirProblema()">🛠️ Corrigir problema</button>
+                            </div>
+
+                            <div id="painel-console" class="hidden">
+                                <div class="scan-bar"><div id="scan-fill"></div></div>
+                                <div id="console-saida" class="console-app" role="log" aria-live="polite" tabindex="0"></div>
+                            </div>
+
+                            <div class="grid-extras">
+                                <div class="card-extra interativo" onclick="ir('casa')"><span>💡</span><p id="ui-luzes">Luzes: --</p></div>
+                                <div class="card-extra interativo" onclick="ir('cameras')"><span>📷</span><p id="ui-cams">Câmeras: --</p></div>
+                                <div class="card-extra interativo" onclick="ir('historico')"><span>📜</span><p id="ui-eventos">Histórico</p></div>
+                                <div class="card-extra interativo" onclick="ir('chat')"><span>🤖</span><p>Assistente virtual guiado</p></div>
+                            </div>
+
+                            <h3 class="sub-titulo">Câmeras da casa</h3>
+                            <div class="lista-cams" id="lista-cams"></div>
+                        </section>
+
+                        <!-- ===== CÂMERAS ===== -->
+                        <section class="painel" id="p-cameras">
+                            <div class="fnaf">
+                                <div class="fnaf-tela">
+                                    <img id="cam-img" alt="Imagem da câmera">
+                                    <div class="fnaf-barra"></div>
+                                    <div class="fnaf-hud top"><span id="cam-nome"></span><span class="rec"><i></i>REC</span></div>
+                                    <div class="fnaf-hud bottom"><span id="cam-hora"></span><span id="cam-aviso"></span></div>
+                                </div>
+                            </div>
+                            <div class="cam-seletor" id="cam-seletor"></div>
+                            <button id="btn-policia" class="btn-app perigo hidden" onclick="chamarPolicia()">🚓 Chamar a polícia</button>
+                            <p id="cam-legenda" class="dica"></p>
+                            <div id="cam-controles" class="cam-controles"></div>
+                        </section>
+
+                        <!-- ===== CASA ===== -->
+                        <section class="painel" id="p-casa">
+                            <p class="dica">Toque na chave para ligar ou desligar. A luz do cômodo muda a imagem da câmera.</p>
+                            <div id="casa-lista"></div>
+                            <details class="add-box">
+                                <summary>➕ Adicionar dispositivo</summary>
+                                <form onsubmit="adicionarDispositivo(event)">
+                                    <input type="text" id="disp-nome" maxlength="30" placeholder="Nome (ex.: Ventilador)" required autocomplete="off">
+                                    <select id="disp-comodo" aria-label="Cômodo">
+                                        <option value="entrada">Entrada</option>
+                                        <option value="sala">Sala</option>
+                                        <option value="cozinha">Cozinha</option>
+                                        <option value="garagem">Garagem</option>
+                                        <option value="quintal">Quintal</option>
+                                    </select>
+                                    <select id="disp-tipo" aria-label="Tipo">
+                                        <option value="outro">Outro dispositivo</option>
+                                        <option value="luz">Luz</option>
+                                        <option value="ar">Ar-condicionado</option>
+                                    </select>
+                                    <button type="submit" class="btn-app">Adicionar</button>
+                                </form>
+                                <div id="casa-msg" class="msg-box hidden"></div>
+                            </details>
+                        </section>
+
+                        <!-- ===== IA MAKER (CHAT) ===== -->
+                        <section class="painel painel-chat" id="p-chat">
+                            <div id="chat-mensagens" class="chat-historico"></div>
+                            <div class="chat-controles">
+                                <div id="chat-chips" class="chips"></div>
+                                <div class="chat-input-area">
+                                    <input type="text" id="input-texto-ia" placeholder="Escreva um comando..." autocomplete="off" onkeypress="verificarEnter(event)">
+                                    <button type="button" onclick="enviarTextoLivre()" aria-label="Enviar">➤</button>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- ===== HISTÓRICO ===== -->
+                        <section class="painel" id="p-historico">
+                            <p class="dica">Tudo o que o sistema detectou e fez, do mais novo para o mais antigo.</p>
+                            <div id="hist-lista" class="console-app" role="log" aria-live="polite"></div>
+                        </section>
+
+                        <!-- AVISO DA IA: vulnerabilidade corrigida -->
+                        <div id="aviso-ia" class="aviso-ia hidden" role="status">
+                            <div class="aviso-topo"><strong>🤖 IA DE SEGURANÇA</strong><button type="button" class="aviso-x" onclick="fecharAviso()" aria-label="Fechar aviso">✕</button></div>
+                            <p id="aviso-resumo"></p>
+                            <div id="aviso-detalhes" class="aviso-detalhes hidden"></div>
+                            <button type="button" id="aviso-btn" class="btn-app sec pequeno" onclick="verDetalhesAviso()">Ver detalhes</button>
+                        </div>
+
+                        <!-- MODO APRESENTAÇÃO (F8 mostra ou oculta) -->
+                        <div id="atalhos" class="atalhos-app hidden">
+                            <strong>MODO APRESENTAÇÃO</strong>
+                            <p><kbd>F1</kbd> forçar invasão</p>
+                            <p><kbd>F2</kbd> aviso da IA</p>
+                            <p><kbd>F3</kbd> problema (a verificação começa sozinha)</p>
+                            <p><kbd>F4</kbd> defeito em uma câmera</p>
+                            <p><kbd>F8</kbd> mostrar ou ocultar</p>
+                        </div>
+                    </div>
+
+                    <div class="nav-app" id="nav-app" role="tablist">
+                        <button type="button" class="ativo" data-p="inicio" onclick="ir('inicio')"><span>🏠</span>Início<i class="badge hidden" id="b-inicio"></i></button>
+                        <button type="button" data-p="cameras" onclick="ir('cameras')"><span>📷</span>Câmeras<i class="badge hidden" id="b-cameras"></i></button>
+                        <button type="button" data-p="casa" onclick="ir('casa')"><span>💡</span>Casa</button>
+                        <button type="button" data-p="chat" onclick="ir('chat')"><span>🤖</span>IA</button>
+                        <button type="button" data-p="historico" onclick="ir('historico')"><span>📜</span>Eventos</button>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </aside>
+
+        <button id="btn-mobile-simulador" onclick="abrirCelularMobile()">🤖 Abrir App Simulador</button>
+    </main>
+
+    <!-- COMO ISSO FUNCIONARIA NA PRÁTICA -->
+    <section class="integracao" id="na-pratica">
+        <div class="integracao-conteudo">
+            <p class="integracao-etiqueta">Na prática, fora do simulador</p>
+            <h2>Implementação</h2>
+
+            <p>O sistema funciona como uma camada de segurança independente, que protege os dispositivos sem substituir assistentes de voz como a Alexa, mantida apenas como interface de voz. O hub é o Home Assistant, instalado em um Raspberry Pi, local e de código aberto, com os dispositivos IoT isolados em uma rede separada (VLAN).</p>
+            <p>Um IDS, como Suricata ou Zeek, captura o tráfego da rede, e a IA analisa esses dados para detectar comportamentos anormais. Ao identificar uma ameaça, o sistema envia um alerta ao hub por API REST ou MQTT, com TLS e token de autenticação. O hub executa a ação, isolando ou bloqueando o dispositivo, e o chatbot explica o alerta ao usuário em linguagem simples, que confirma as decisões críticas.</p>
+
+            <ol class="trilha" aria-label="Passo a passo de um alerta">
+                <li><strong>Dispositivos IoT</strong><span>Ficam isolados em uma rede separada (VLAN).</span></li>
+                <li><strong>IDS</strong><span>Suricata ou Zeek capturam o tráfego da rede.</span></li>
+                <li><strong>IA</strong><span>Analisa os dados e detecta comportamentos anormais.</span></li>
+                <li><strong>Alerta ao hub</strong><span>Vai por API REST ou MQTT, com TLS e token de autenticação.</span></li>
+                <li><strong>Hub (Home Assistant)</strong><span>Roda em um Raspberry Pi e executa a ação: isola ou bloqueia o dispositivo.</span></li>
+                <li><strong>Chatbot</strong><span>Explica o alerta em linguagem simples. Você confirma as decisões críticas.</span></li>
+            </ol>
+
+            <ul class="tecnologias" aria-label="Tecnologias citadas">
+                <li>Home Assistant</li><li>Raspberry Pi</li><li>VLAN</li><li>Suricata</li><li>Zeek</li><li>API REST</li><li>MQTT</li><li>TLS</li><li>Alexa (só voz)</li>
+            </ul>
+
+            <p class="integracao-nota">Nesta página, os alertas são fictícios: o aplicativo simula o papel do chatbot e do hub.</p>
+        </div>
+    </section>
+
+    <script>
+        document.getElementById('menu-toggle').addEventListener('click', () => {
+            document.getElementById('nav-menu').classList.toggle('ativo');
+        });
+
+        // o botão "Abrir App Simulador" flutua na tela e, ao chegar no fim da área do app, assenta no lugar
+        function posicionarBotaoApp() {
+            const btn = document.getElementById('btn-mobile-simulador');
+            const area = document.querySelector('main.container-painel');
+            if (!btn || !area) return;
+            btn.classList.toggle('no-fixed', area.getBoundingClientRect().bottom <= window.innerHeight + 40);
+        }
+        window.addEventListener('scroll', posicionarBotaoApp, { passive: true });
+        window.addEventListener('resize', posicionarBotaoApp);
+        posicionarBotaoApp();
+
+        function switchTab(type) {
+            if (type === 'login') {
+                document.getElementById('tab-login').classList.add('active');
+                document.getElementById('tab-cadastro').classList.remove('active');
+                document.getElementById('login-form').classList.remove('hidden');
+                document.getElementById('cadastro-form').classList.add('hidden');
+            } else {
+                document.getElementById('tab-cadastro').classList.add('active');
+                document.getElementById('tab-login').classList.remove('active');
+                document.getElementById('cadastro-form').classList.remove('hidden');
+                document.getElementById('login-form').classList.add('hidden');
+            }
+            document.getElementById('mensagem').classList.add('hidden');
+        }
+
+        function abrirCelularMobile() { document.getElementById('celular-mockup').classList.add('mobile-aberto'); }
+        function fecharCelularMobile() { document.getElementById('celular-mockup').classList.remove('mobile-aberto'); }
+
+        function showMsg(txt, isError) {
+            const el = document.getElementById('mensagem');
+            el.innerText = txt;
+            el.className = 'msg-box ' + (isError ? 'error' : 'success');
+            el.classList.remove('hidden');
+        }
+
+        async function fazerLogin(e) {
+            e.preventDefault();
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: document.getElementById('login-email').value, senha: document.getElementById('login-senha').value })
+                });
+                const data = await res.json();
+                if (data.sucesso) window.location.reload(); else showMsg(data.mensagem, true);
+            } catch (err) { showMsg('Erro de comunicação com o servidor.', true); }
+        }
+
+        async function fazerCadastro(e) {
+            e.preventDefault();
+            try {
+                const res = await fetch('/api/cadastrar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: document.getElementById('cad-email').value, senha: document.getElementById('cad-senha').value })
+                });
+                const data = await res.json();
+                if (data.sucesso) { showMsg(data.mensagem, false); setTimeout(() => window.location.reload(), 1000); } else showMsg(data.mensagem, true);
+            } catch (err) { showMsg('Erro de comunicação com o servidor.', true); }
+        }
+
+        async function fazerLoginMestre() {
+            const res = await fetch('/api/login_mestre', { method: 'POST' });
+            const data = await res.json();
+            if (data.sucesso) window.location.reload();
+        }
+
+        async function fazerLogout() {
+            await fetch('/api/logout', { method: 'POST' });
+            window.location.reload();
+        }
+    </script>
+    {% if user %}<script src="{{ url_for('static', filename='seguranca-app.js') }}"></script>{% endif %}
+</body>
+</html>
